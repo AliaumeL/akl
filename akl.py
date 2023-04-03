@@ -34,7 +34,8 @@ import hashlib
 # import feedparser
 
 # Web interactions
-import requests
+# import requests
+import httpx
 from urllib.parse import urlparse, urljoin, parse_qs, urlencode
 
 # GUI interactions
@@ -43,10 +44,27 @@ import clipboard
 # TUI interactions
 import click
 
+### LOGGING
+logging.basicConfig(filename="akl.log",
+                    filemode='a',
+                    format='%(asctime)s,%(msecs)d %(name)s %(levelname)s %(message)s',
+                    datefmt='%H:%M:%S',
+                    level=logging.DEBUG)
+
 ### CORE UTILITY FUNCTIONS ###
 
 HEADERS = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.169 Safari/537.36"
+    'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/110.0',
+    'Accept': '*/*',
+    'Accept-Language': 'fr,fr-FR;q=0.8,en-US;q=0.5,en;q=0.3',
+    # 'Accept-Encoding': 'gzip, deflate, br',
+    'Referer': 'https://reader.elsevier.com/',
+    'Origin': 'https://reader.elsevier.com',
+    'DNT': '1',
+    'Connection': 'keep-alive',
+    'Sec-Fetch-Dest': 'empty',
+    'Sec-Fetch-Mode': 'cors',
+    'Sec-Fetch-Site': 'cross-site',
 }
 
 #
@@ -108,6 +126,8 @@ def destinations_from_pdf(reader: pypdf.PdfReader) -> List[Destination]:
     return [
         Destination(left=left, top=top, page=page, names=[dest.title for dest in dests])
         for ((left, top, page), dests) in locations.items()
+        if isinstance(left,float) and isinstance(top,float) and
+        isinstance(page,int)
     ]
 
 def custom_pdf_creation(
@@ -313,6 +333,7 @@ AppArgs = Union[OpenArgs, ImportArgs, CiteArgs]
 
 def args_of_uri(uri: str) -> Optional[AppArgs]:
     parsed = urlparse(uri)
+    logging.debug(f"[parsing] : {parsed}")
     query = parse_qs(parsed.query)
 
     if parsed.scheme != "akl":
@@ -320,13 +341,19 @@ def args_of_uri(uri: str) -> Optional[AppArgs]:
 
     query = {k: v[0] for (k, v) in query.items()
                      if len(v) > 0 and v[0] is not None}
+    logging.debug(f"[parsing] : {query}")
 
     if parsed.netloc == "open-document":
         return OpenArgs.parse_obj(query)
     elif parsed.netloc == "cite":
         return CiteArgs.parse_obj(query)
     elif parsed.netloc == "import-document":
-        query["document"] = PdfMetaData.parse_raw(query["document"])
+        logging.debug(f"[parsing] : this is import-document link!")
+        try:
+            query["document"] = PdfMetaData.parse_raw(query["document"])
+        except Exception as e:
+            logging.error(f"Unable to parse the document: {e}")
+        logging.debug(f"[parsing] : {query}")
         return ImportArgs.parse_obj(query)
     else:
         raise ValueError(f"Unknown command {parsed.netloc}")
@@ -355,6 +382,14 @@ def open_osx(path):
 
 def open_win(path):
     os.startfile(path)
+
+def open_pdf_evince(path : Path, dest : Optional[str], page : Optional[int]):
+    if dest is not None:
+        return subprocess.run(["evince", path, f"--named-dest={page}"])
+    elif page is not None:
+        return subprocess.run(["evince", path, f"--page-label={page}"])
+    else:
+        return subprocess.run(["evince", path])
 
 def open_pdf_zathura(path : Path, dest : Optional[str], page : Optional[int]):
     if page is not None:
@@ -385,6 +420,7 @@ def create_edited_pdf(
         rawpath : Path,
         expath: Path):
     """ The actual implementation that creates the custom pdf """
+    logging.debug(f"Starting to read {rawpath} to produce {expath}")
     reader = pypdf.PdfReader(rawpath)
 
     def linker(d: Destination) -> List[pypdf.generic.DictionaryObject]:
@@ -435,6 +471,7 @@ def create_edited_pdf(
     writer = custom_pdf_creation(reader, linker, rewriter)
     with open(expath, "wb") as fp:
         writer.write(fp)
+    logging.debug(f"Finished writing to {expath}")
 
 
 ## The lib resolver
@@ -476,16 +513,18 @@ def do_open(args: OpenArgs):
 
     # ----> if it is in the library, then open it
     if m is not None:
-        logging.warning(f"{args.uri} was already in the library")
+        logging.debug(f"{args.uri} was already in the library")
         rawpath = args.storage / "raw" / m.filename
         expath  = args.storage / "edit" / m.filename
         if not expath.exists():
+            logging.debug(f"{args.uri} was not computed before")
             create_edited_pdf(args, rawpath, expath)
+        logging.debug(f"open {expath} at {args.dest} page {args.page}")
         return open_pdf_at(expath, args.dest, args.page)
     # ----> if it is a filepath, then open it (and tmp build)
     true_path = Path(args.uri)
     if true_path.exists():
-        logging.warning(f"{args.uri} was a path")
+        logging.debug(f"{args.uri} was a path")
         # The file exists
         checksum = sha256sum(true_path)
         dups = lib.duplicates(checksum)
@@ -496,6 +535,7 @@ def do_open(args: OpenArgs):
         else:
             logging.warning(f"{args.uri} was in the cache")
         return open_pdf_at(expath, args.dest, args.page)
+    logging.warning(f"{args.uri} was not in the library")
     # ----> otherwise, default_open
     return open_default(args.uri)
 
@@ -508,20 +548,41 @@ def do_import(args: ImportArgs) -> Optional[PdfMetaData]:
     lib = PdfLibrary.load_from(args.storage)
     m = lib.find_similar_to(args.document)
     if m is not None:
+        logging.warning(f"Importing a document that was already present {args.document}")
         with lib:
             m.identifiers = list(set([*args.document.identifiers,*m.identifiers]))
-        return None
+        do_open(OpenArgs(uri=m.identifiers[0], storage=args.storage))
+        return m
 
     # There are no similar documents
     # in the library, so download
     path = Path(args.download)
     if path.exists():
+        logging.info(f"The {args.download} is probably a local file")
         with open(path, "rb") as f:
             content = f.read()
     else:
-        answ = requests.get(args.download, headers=HEADERS)
+        logging.info(f"The {args.download} is probably an url")
+        parsed = urlparse(args.download)
+        newurl = parsed._replace(query=None).geturl()
+        answ = httpx.get(args.download, headers={
+                'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/110.0',
+                'Accept': '*/*',
+                'Accept-Language': 'fr,fr-FR;q=0.8,en-US;q=0.5,en;q=0.3',
+                'Accept-Encoding': 'gzip, deflate, br',
+                'referer': newurl,
+                'origin': newurl,
+                'DNT': '1',
+                'Connection': 'keep-alive',
+                'Sec-Fetch-Dest': 'empty',
+                'Sec-Fetch-Mode': 'cors',
+                'Sec-Fetch-Site': 'cross-site',
+            }
+        )
         if answ.status_code != 200:
+            logging.error(f"unable to fetch {args.document}")
             return None
+
         content = answ.content
 
     # Compute the actual checksum
@@ -531,8 +592,10 @@ def do_import(args: ImportArgs) -> Optional[PdfMetaData]:
     # this file ^^
     dups = lib.duplicates(checksum)
     if len(dups) == 1:
+        logging.info(f"The document {args.document} has a checksum clash")
         with lib:
-            dups[0].identifiers.append(args.download)
+            m = dups[0]
+            dups[0].identifiers = list(set([*args.document.identifiers,*m.identifiers, args.download]))
             return dups[0]
 
     # TODO: check the filetype using `magic`
@@ -540,12 +603,17 @@ def do_import(args: ImportArgs) -> Optional[PdfMetaData]:
     name = generate_name(args.document)
     args.document.filename = name
 
+    logging.info(f"Writing {name} for the current document")
+
     with open(lib.storage / "raw" / name, "wb") as f:
         f.write(content)
         f.flush()
     with lib:
         lib.data.append(args.document)
+        logging.info(f"{checksum} added to the database")
 
+    # TODO: open the document maybe using a good link
+    # rather than the download link given...
     do_open(OpenArgs(uri=args.download, storage=args.storage))
     return args.document
 
@@ -618,21 +686,47 @@ def import_document(download : str,
     default="pdf-storage",
     type=click.Path(exists=True, file_okay=False, dir_okay=True),
 )
+@click.option(
+    "--page",
+    default=None,
+    type=click.INT,
+)
+@click.option(
+    "--dest",
+    default=None,
+    type=click.STRING
+)
 @click.argument("document")
-def open_document(document, storage):
+def open_document(document, storage,page,dest):
     """ Opens in exploratory mode a given file """
     return do_open(
         OpenArgs(
             uri=document,
             storage=Path(storage).resolve(),
+            page=page,
+            dest=dest
         )
     )
+
+
+@akl.command()
+@click.option(
+    "--storage",
+    default="pdf-storage",
+    type=click.Path(exists=True, file_okay=False, dir_okay=True),
+)
+@click.argument("document")
+def resolve_document(document,storage):
+    """ Gives the filepath to the given document """
+    pass # TODO: implement
 
 @akl.command()
 @click.argument("akl-uri")
 def follow(akl_uri):
     """ Follows the uri given for akl links """
+    logging.debug(f"Following link {akl_uri}")
     command = args_of_uri(akl_uri)
+    logging.debug(f"Link parsed: {command}")
     if command is not None:
         do_command(command)
 

@@ -23,7 +23,7 @@
   const year = date.substring(0, 4);
   //const abstr = meta("citation_abstract");
 
-  const storage = "/home/alopez/Code/akl/pdf-storage/";
+  const storage = "pdf-storage/";
 
   const query = new URLSearchParams({
     download,
@@ -43,7 +43,7 @@
   const list = document.querySelector(".extra-services .full-text ul");
   const li = document.createElement("li");
   const a = document.createElement("a");
-  a.target = "_blank";
+  //a.target = "_blank";
   a.innerHTML = "AKL IMPORT";
   a.href = url;
   li.appendChild(a);

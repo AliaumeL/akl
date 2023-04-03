@@ -6,10 +6,24 @@
   "icons": {
     "48": "icons/border-48.png"
   },
+  "permissions": [
+      "webRequest", 
+      "storage",
+      "webRequestBlocking",
+      "webNavigation",
+      "<all_urls>"
+  ],
+  "background": {
+    "scripts": ["background.js"]
+  },
   "content_scripts": [
     {
       "matches": ["*://*.arxiv.org/*"],
-      "js": ["akl-extension.js"]
+      "js": ["akl-arxiv-extension.js"]
+    },
+    {
+      "matches": ["*://reader.elsevier.com/*"],
+      "js": ["akl-elsevier-extension.js"]
     }
   ]
 }
