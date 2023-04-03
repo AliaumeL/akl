@@ -1,0 +1,16 @@
+{
+  "manifest_version": 2,
+  "name": "AKL Importer",
+  "version": "0.1",
+  "description": "Adds a download button to import using AKL",
+  "icons": {
+    "48": "icons/border-48.png"
+  },
+  "content_scripts": [
+    {
+      "matches": ["*://*.arxiv.org/*"],
+      "js": ["akl-extension.js"]
+    }
+  ]
+}
+
