@@ -33,7 +33,7 @@ setTimeout(() => {
       //const date = json.message["published-online"]["date-parts"][0];
       const year = "2008";
 
-      const storage = "pdf-storage";
+      const storage = "/home/alopez/Code/akl/pdf-storage";
       const query = new URLSearchParams({
         download: durl[pii],
         storage,

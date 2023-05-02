@@ -36,6 +36,7 @@ import hashlib
 # Web interactions
 # import requests
 import httpx
+import requests
 from urllib.parse import urlparse, urljoin, parse_qs, urlencode
 
 # GUI interactions
@@ -44,28 +45,16 @@ import clipboard
 # TUI interactions
 import click
 
+default_dir = "/home/alopez/Code/akl/pdf-storage"
+
 ### LOGGING
-logging.basicConfig(filename="akl.log",
+logging.basicConfig(filename="/home/alopez/Code/akl/akl.log",
                     filemode='a',
                     format='%(asctime)s,%(msecs)d %(name)s %(levelname)s %(message)s',
                     datefmt='%H:%M:%S',
                     level=logging.DEBUG)
 
 ### CORE UTILITY FUNCTIONS ###
-
-HEADERS = {
-    'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/110.0',
-    'Accept': '*/*',
-    'Accept-Language': 'fr,fr-FR;q=0.8,en-US;q=0.5,en;q=0.3',
-    # 'Accept-Encoding': 'gzip, deflate, br',
-    'Referer': 'https://reader.elsevier.com/',
-    'Origin': 'https://reader.elsevier.com',
-    'DNT': '1',
-    'Connection': 'keep-alive',
-    'Sec-Fetch-Dest': 'empty',
-    'Sec-Fetch-Mode': 'cors',
-    'Sec-Fetch-Site': 'cross-site',
-}
 
 #
 # For older python versions,
@@ -172,14 +161,16 @@ Identifier = str
 
 def identifier_of_uri(uri : str) -> Identifier:
     """ smart parsing of identifiers """
-    # (1) Try to see arxiv ids
-    # arxiv_pat = r"http(s)?://arxiv\.org/(abs|pdf)/([^\?]*)(v[0-9]+)?(\?.*)?"
-    # (2) it can be a doi
-    # doi_pat = r"http(s)?://(dx\.)?doi\.org/([^\?]*)(\?.*)?"
-    # (3) it can be an ISBN
-    # isbn = r""
-    # (4) it can be a random url
-    return uri
+    parsed = urlparse(uri)
+    if parsed.scheme == "https" or parsed.scheme == "http":
+        if parsed.netloc == "arxiv.org":
+            return f"arXiv:{parsed.path[5:]}"
+        elif parsed.netloc == "doi.org" or parsed.netloc == "dx.doi.org":
+            return f"doi:{parsed.path[1:]}"
+        else:
+            return uri
+    else:
+        return uri
 
 class PdfMetaData(BaseModel):
     """
@@ -498,6 +489,7 @@ def maybe_resolve_uri(uri : str, lib : PdfLibrary) -> Optional[PdfMetaData]:
         return m1
     # (2) extract/cleanup an identifier (possibly)
     uid = identifier_of_uri(uri)
+    logging.debug(f"Normalising the uri to {uid}")
     m2 = maybe_resolve_identifier(uid, lib)
     if m2 is not None:
         return m2
@@ -565,7 +557,8 @@ def do_import(args: ImportArgs) -> Optional[PdfMetaData]:
         logging.info(f"The {args.download} is probably an url")
         parsed = urlparse(args.download)
         newurl = parsed._replace(query=None).geturl()
-        answ = httpx.get(args.download, headers={
+        logging.info(f"The base url is {newurl}")
+        headers = {
                 'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/110.0',
                 'Accept': '*/*',
                 'Accept-Language': 'fr,fr-FR;q=0.8,en-US;q=0.5,en;q=0.3',
@@ -578,9 +571,14 @@ def do_import(args: ImportArgs) -> Optional[PdfMetaData]:
                 'Sec-Fetch-Mode': 'cors',
                 'Sec-Fetch-Site': 'cross-site',
             }
-        )
+
+        if parsed.netloc == "arxiv.org":
+            answ = requests.get(args.download, headers=headers)
+        else:
+            answ = httpx.get(args.download, headers=headers)
+
         if answ.status_code != 200:
-            logging.error(f"unable to fetch {args.document}")
+            logging.error(f"unable to fetch {args.document} using {args.newurl}")
             return None
 
         content = answ.content
@@ -612,9 +610,10 @@ def do_import(args: ImportArgs) -> Optional[PdfMetaData]:
         lib.data.append(args.document)
         logging.info(f"{checksum} added to the database")
 
-    # TODO: open the document maybe using a good link
-    # rather than the download link given...
-    do_open(OpenArgs(uri=args.download, storage=args.storage))
+    if len(args.document.identifiers) > 0:
+        do_open(OpenArgs(uri=args.document.identifiers[0], storage=args.storage))
+    else:
+        do_open(OpenArgs(uri=args.download, storage=args.storage))
     return args.document
 
 def do_cite(args: CiteArgs):
@@ -649,7 +648,7 @@ def akl():
 @akl.command()
 @click.option(
     "--storage",
-    default="pdf-storage",
+    default=default_dir,
     type=click.Path(exists=True, file_okay=False, dir_okay=True),
 )
 @click.option("--title", default = None)
@@ -683,7 +682,7 @@ def import_document(download : str,
 @akl.command()
 @click.option(
     "--storage",
-    default="pdf-storage",
+    default=default_dir,
     type=click.Path(exists=True, file_okay=False, dir_okay=True),
 )
 @click.option(
@@ -712,7 +711,7 @@ def open_document(document, storage,page,dest):
 @akl.command()
 @click.option(
     "--storage",
-    default="pdf-storage",
+    default=default_dir,
     type=click.Path(exists=True, file_okay=False, dir_okay=True),
 )
 @click.argument("document")

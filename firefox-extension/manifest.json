@@ -18,6 +18,10 @@
   },
   "content_scripts": [
     {
+      "matches": ["*://lmcs.episciences.org/*"],
+      "js": ["akl-lmcs-extension.js"]
+    },
+    {
       "matches": ["*://*.arxiv.org/*"],
       "js": ["akl-arxiv-extension.js"]
     },

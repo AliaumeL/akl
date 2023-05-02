@@ -23,7 +23,7 @@
   const year = date.substring(0, 4);
   //const abstr = meta("citation_abstract");
 
-  const storage = "pdf-storage/";
+  const storage = "/home/alopez/Code/akl/pdf-storage/";
 
   const query = new URLSearchParams({
     download,
