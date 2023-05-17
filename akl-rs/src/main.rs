@@ -456,12 +456,13 @@ impl Document {
             .collect::<Vec<String>>()
             .join("-");
         let year = self.year;
-        let title : String = self.title
+        let mut title : String = self.title
                                  .to_ascii_lowercase()
                                  .split_whitespace()
                                  .filter(|x| x.len() > 0 && !STUPID_WORDS.contains(x))
                                  .collect::<Vec<&str>>()
                                  .join("-");
+        title.truncate(30); // Cannot fail because we have ascii code points
         let hash = &self.checksum;
         format!("{authors} {year} {title} {hash}.pdf")
     }
