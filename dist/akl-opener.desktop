@@ -1,0 +1,6 @@
+[Desktop Entry]
+Type=Application
+Name=AKL Link Opener
+Exec=akl %u
+StartupNotify=true
+MimeType=x-scheme-handler/akl;
