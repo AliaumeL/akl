@@ -31,20 +31,23 @@ setTimeout(() => {
       );
       const publisher = json.message["container-title"];
       //const date = json.message["published-online"]["date-parts"][0];
-      const year = "2008";
+      const year = 2008;
+      const context = [];
 
-      const storage = "/home/alopez/Code/akl/pdf-storage";
+      const runtimeAnsw = await browser.runtime.sendMessage({
+        pii,
+      });
+
       const query = new URLSearchParams({
-        download: durl[pii],
-        storage,
-        document: JSON.stringify({
-          checksum: "",
-          filename: `${authors} - ${title} - ${year} - ${DOI}`,
+        payload: JSON.stringify({
+          uri: runtimeAnsw["filepath"],
           title,
           year,
           authors,
           identifiers,
-          //abstract: abstr,
+          context,
+          view: true,
+          force: false,
         }),
       });
 

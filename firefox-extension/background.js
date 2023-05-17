@@ -12,3 +12,13 @@ https: function logURL(requestDetails) {
 browser.webRequest.onBeforeSendHeaders.addListener(logURL, {
   urls: ["https://pdf.sciencedirectassets.com/*"],
 });
+
+browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  console.log(sender);
+  console.log(request);
+  const dwnl = await browser.downloads.download({
+    url: "http://google.com",
+      conflictAction: "overwrite",
+  });
+  sendResponse({ filepath: dwnl.filename });
+});

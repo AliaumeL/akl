@@ -8,9 +8,9 @@
   const arxivID = download.substring(22);
 
   const identifiers = [
-    `arXiv:${arxivID}`,
-    download,
     `https://arxiv.org/abs/${arxivID}`,
+    `arxiv:${arxivID}`,
+    download,
   ];
 
   const title = meta("citation_title");
@@ -21,21 +21,18 @@
   ).map((x) => x.content);
 
   const year = date.substring(0, 4);
+  const context = [];
   //const abstr = meta("citation_abstract");
 
-  const storage = "/home/alopez/Code/akl/pdf-storage/";
-
   const query = new URLSearchParams({
-    download,
-    storage,
-    document: JSON.stringify({
-      checksum: "",
-      filename: `${authors} - ${title} - ${year} - ${arxivID}`,
+    payload: JSON.stringify({
+      uri: download,
       title,
-      year,
       authors,
+      context,
       identifiers,
-      //abstract: abstr,
+      view: true,
+      force: false,
     }),
   });
 

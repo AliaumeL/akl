@@ -8,6 +8,7 @@
   },
   "permissions": [
       "webRequest", 
+      "downloads",
       "storage",
       "webRequestBlocking",
       "webNavigation",
