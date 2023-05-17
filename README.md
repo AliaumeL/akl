@@ -52,15 +52,38 @@ Non goals are
    different environments, hence leveraging as much as possible
    external programs.
 
+
 ## How To Install
+
+For now, you have to build the file from source, which means running
+
+```bash
+cargo build --release
+```
+
+Note that depending on your system, you may need to install the following
+
+- `pkg-config`
 
 ### On Linux
 
-1. Open the file `~/.local/share/applications/mimeapps.list` and add the
-   following line `x-scheme-handler/akl=akl-opener.desktop;`
-2. Add the file `dist/akl-opener.desktop` to your desktop files, for
-   instance in `~/.local/share/applications/`
-3. Add `akl` to your path
+Add the desktop file to your list of applications.
+
+```bash
+cp dist/akl-opener.desktop ~/.local/share/applications/akl-opener.desktop
+```
+
+Register the desktop file as able to open `akl` links.
+
+```bash
+echo "x-scheme-handler/akl=akl-opener.desktop;" >> ~/.local/share/applications/mimeapps.list
+```
+
+Add the `akl` binary to your path, for instance by running
+
+```bash
+cp target/release/akl-rs /usr/local/bin/akl
+```
 
 ### On OSX
 
