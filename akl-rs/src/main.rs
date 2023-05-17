@@ -12,7 +12,7 @@ use url::Url;
 // clipboard management
 // with extra x11 trickery to get the clipboard to work
 use copypasta_ext::prelude::*;
-use copypasta_ext::x11_bin::ClipboardContext;
+use copypasta_ext::x11_fork::ClipboardContext;
 
 
 // serialisation  and deserialisation 
