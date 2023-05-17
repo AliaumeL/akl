@@ -630,16 +630,18 @@ impl AppState {
         let pdirs = ProjectDirs::from("com", "aluminium", "AKL").unwrap();
 
 
-        let index_path = pdirs.config_dir().join("index.yaml");
+        let conf_path = pdirs.config_dir();
         let raw_path   = pdirs.data_dir().join("raw");
         let mod_path   = pdirs.data_dir().join("mod");
         // TODO: in modern XDG, there is XDG_STATE_DIR
         // but this is not cross platform
+        let index_path = conf_path.join("index.yaml");
         let log_path   = pdirs.cache_dir().join("logs");
 
         // ensures that the paths exists
         // TODO: postpone this check to times we actually need
         // to open the files.
+        std::fs::create_dir_all(&conf_path).unwrap();
         std::fs::create_dir_all(&raw_path).unwrap();
         std::fs::create_dir_all(&mod_path).unwrap();
         std::fs::create_dir_all(&log_path).unwrap();
