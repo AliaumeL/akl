@@ -53,7 +53,7 @@ Non goals are
    external programs.
 
 
-## How To Install
+## How To Install The AKL-RS program
 
 For now, you have to build the file from source, which means running
 
@@ -61,9 +61,11 @@ For now, you have to build the file from source, which means running
 cargo build --release
 ```
 
-Note that depending on your system, you may need to install the following
+Note that depending on your system, you may need to install the following:
 
 - `pkg-config`
+- `libssl-dev`
+- `libdbus-1-dev`
 
 ### On Linux
 
@@ -85,6 +87,22 @@ Add the `akl` binary to your path, for instance by running
 cp target/release/akl-rs /usr/local/bin/akl
 ```
 
+If for some reason on `evince` you do not have the right to launch applications,
+this can help: in `/etc/apparmor.d/usr.bin.evince`, add a line
+allowing to launch `/usr/local/bin/akl` via:
+
+```
+/usr/local/bin/akl ux,
+```
+
+Beware that this means you trust `akl` to run arbitrary programs.
+For the configuration to take effect, you must use
+
+```
+apparmor_parser -T -W -r /etc/apparmor.d/usr.bin.evince
+```
+
+
 ### On OSX
 
 TODO
@@ -92,3 +110,11 @@ TODO
 ### On Windows
 
 TODO
+
+## How To install the AKL Extension
+
+For now, the web extension only works with Firefox
+and is not available in the app-store. To load the extension
+you can go to `about:debugging`, select "my firefox", and
+temporarily load the `firefox-extension/manifest.json` file.
+
