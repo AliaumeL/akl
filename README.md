@@ -56,6 +56,7 @@ Non goals are
 ## How To Install The AKL-RS program
 
 For now, you have to build the file from source, which means running
+the following command.
 
 ```bash
 cargo build --release
@@ -63,6 +64,7 @@ cargo build --release
 
 Note that depending on your system, you may need to install the following:
 
+- `cargo`
 - `pkg-config`
 - `libssl-dev`
 - `libdbus-1-dev`
