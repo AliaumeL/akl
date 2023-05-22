@@ -16,6 +16,12 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
+    - name: Add pkg-config
+      run: apt install pkg-config
+    - name: Install libssl
+      run: apt install libssl-dev
+    - name: Install libdbus
+      run: apt install libdbus-1-dev
     - name: Build
       run: cd akl-rs && cargo build --verbose
     - name: Run tests
