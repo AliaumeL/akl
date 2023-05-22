@@ -449,10 +449,11 @@ impl Document {
     /// in lowercase and dash separated words, to simplify
     /// exploration using fzf, find or other tools.
     fn generate_name(&self) -> String {
-        let authors = self.authors.iter()
+        let mut authors = self.authors.iter()
             .map(|author| author.to_ascii_lowercase()
                                 .replace("  ", " ")
-                                .replace(' ', "-"))
+                                .replace(' ', "-")
+                                .replace(',',"-"))
             .collect::<Vec<String>>()
             .join("-");
         let year = self.year;
@@ -463,6 +464,7 @@ impl Document {
                                  .collect::<Vec<&str>>()
                                  .join("-");
         title.truncate(30); // Cannot fail because we have ascii code points
+        authors.truncate(30); // Cannot fail because we have ascii code points
         let hash = &self.checksum;
         format!("{authors} {year} {title} {hash}.pdf")
     }
