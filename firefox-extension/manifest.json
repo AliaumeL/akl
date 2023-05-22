@@ -23,6 +23,10 @@
       "js": ["akl-lmcs-extension.js"]
     },
     {
+      "matches": ["*://dl.acm.org/*"],
+      "js": ["akl-acm-extension.js"]
+    },
+    {
       "matches": ["*://*.arxiv.org/*"],
       "js": ["akl-arxiv-extension.js"]
     },
