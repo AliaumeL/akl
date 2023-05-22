@@ -13,12 +13,17 @@ browser.webRequest.onBeforeSendHeaders.addListener(logURL, {
   urls: ["https://pdf.sciencedirectassets.com/*"],
 });
 
-browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
+browser.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
   console.log(sender);
   console.log(request);
+
   const dwnl = await browser.downloads.download({
-    url: "http://google.com",
-      conflictAction: "overwrite",
+    url: request.url,
+    filename: request.title,
+    conflictAction: "overwrite",
   });
-  sendResponse({ filepath: dwnl.filename });
+
+  // FIXME: we should wait for the download to be finished
+  // using the onChanged event handler
+  return browser.downloads.search({ id: dwnl });
 });
