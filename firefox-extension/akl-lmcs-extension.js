@@ -2,13 +2,13 @@ setTimeout(() => {
   "use strict";
 
   const meta = (field) =>
-    document.querySelector(`meta[name="${field}"]`).content;
+    document.querySelector(`meta[name="${field}"]`)?.content;
 
   const DOI = meta("citation_doi") || meta("DC.identifier");
   const publisher = meta("citation_journal_title");
 
   const date = meta("citation_date");
-  const year = date.substring(0, 4);
+  const year = parseInt(date.substring(0, 4));
 
   const citation_url = meta("citation_pdf_url");
   const title = meta("citation_title");
@@ -22,7 +22,11 @@ setTimeout(() => {
     `doi:${DOI}`,
     window.location.href,
   ];
-  const context = [publisher];
+
+  const context = [];
+  if (publisher) {
+    context.push(publisher);
+  }
 
   const query = new URLSearchParams({
     payload: JSON.stringify({
