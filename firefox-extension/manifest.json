@@ -19,6 +19,10 @@
   },
   "content_scripts": [
     {
+      "matches": ["*://drops.dagstuhl.de/*"],
+      "js": ["akl-drops-extension.js"]
+    },
+    {
       "matches": ["*://lmcs.episciences.org/*"],
       "js": ["akl-lmcs-extension.js"]
     },
