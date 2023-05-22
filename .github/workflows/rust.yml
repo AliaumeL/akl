@@ -16,18 +16,10 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
-    - name: Cache apt-install pkg-config
+    - name: Cache apt-install
       uses: daaku/gh-action-apt-install@v4
       with:
-        packages: pkg-config
-    - name: Cache apt-install libssl
-      uses: daaku/gh-action-apt-install@v4
-      with:
-        packages: libssl-dev
-    - name: Cache apt-install libdbus
-      uses: daaku/gh-action-apt-install@v4
-      with:
-        packages: libdbus-1-dev
+        packages: pkg-config libdbus-1-dev libssl-dev
     - name: Build
       run: cd akl-rs && cargo build --verbose
     - name: Run tests
