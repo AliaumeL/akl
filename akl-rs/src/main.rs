@@ -646,15 +646,13 @@ impl AppState {
         std::fs::create_dir_all(&raw_path).unwrap();
         std::fs::create_dir_all(&mod_path).unwrap();
         std::fs::create_dir_all(&log_path).unwrap();
-        std::fs::OpenOptions::new()
-                .create_new(true)
-                .open(&index_path).map_or((), |_| ());
 
         // TODO: gracefully handle failure to parse the config
         let index : Vec<Document> =
             std::fs::OpenOptions::new()
                 .read(true)
-                .write(false)
+                .write(true)
+                .create(true)
                 .open(&index_path)
                 .map(serde_yaml::from_reader)
                 .unwrap()
