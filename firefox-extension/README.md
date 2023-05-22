@@ -47,7 +47,8 @@ have already been downloaded. This implies moving more of the logic to the
 download status (and see if the document already exists in the library),
 it is necessary to communicate with the `akl` program directly.
 
-Zotero Connectors: https://github.com/zotero/zotero-connectors
-Firefox extension: https://developer.mozilla.org/fr/docs/Mozilla/Add-ons/WebExtensions
-Background Scripts: https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/Background_scripts
-Content Scripts: https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/Content_scripts
+[Zotero Connectors]: https://github.com/zotero/zotero-connectors
+[Firefox extension]: https://developer.mozilla.org/fr/docs/Mozilla/Add-ons/WebExtensions
+[Background Scripts]: https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/Background_scripts
+[Background Script]: https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/Background_scripts
+[Content Scripts]: https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/Content_scripts
