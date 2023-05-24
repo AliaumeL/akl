@@ -3,12 +3,6 @@
     `meta[name="dc.Identifier"][scheme="doi"]`
   ).content;
 
-  const url_params = {
-    dois: "10.1145/298514.298591",
-    format: "bibTex",
-    targetFile: "custom-bibtex",
-  };
-
   const list = document.querySelector("li.pdf-file").parentElement;
   const li = document.createElement("li");
   const a = document.createElement("a");
