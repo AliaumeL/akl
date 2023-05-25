@@ -127,3 +127,25 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# Latex garbage
+*.aux
+*.kaux
+*.log
+*.out
+*.pdf
+*.dvi
+*.synctex.gz
+*.diagnose
+*.bbl
+*.blg
+*.fls
+*.fdb_latexmk
+*.latexmkrc
+
+# SQLITE
+*.sqlite3
+*.sqlite3-journal
+*.lock
+
+
