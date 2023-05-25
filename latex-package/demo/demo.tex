@@ -1,0 +1,70 @@
+% This is a demo document for the akltex package
+\documentclass{article}
+\usepackage{hyperref}
+\usepackage{url}
+
+
+% Loading the package with the "rewrite" mode
+% updates all the links to be handled by `akl`
+\usepackage[rewrite]{akltex}
+
+\author{Aliaume Lopez}
+\title{Demo akl document}
+
+\begin{document}
+
+\maketitle
+
+%%% THE FIRST PART OF THE DOCUMENT
+%%% ILLUSTRATES THE SYNTAX FOR DEFINING
+%%% CUSTOM ENTRYPOINTS OF DOCUMENTS
+
+% Adding a figure as part of a paper
+\aklset{romano2023modeling}{Figure 1}{https://arxiv.org/abs/2305.15355?page=5&dest=figure.1}
+
+% Referencing a section, using the key-value syntax
+\akldef{
+    key=romano2023modeling,
+    name=Section 4,
+    url={https://arxiv.org/abs/2305.15355?page=9&dest=section.4}
+}
+
+% Leveraging the `withakl` command
+% and specifying a custom url allows
+% to "batch insert" relevant parts of a document.
+%
+% Here we demonstrate the usage with specific pages.
+\withakl[https://arxiv.org/abs/2305.15355]{romano2023modeling}{
+    % Figure 8 of the document
+    \aklsetd{name=Figure 8,page=11,dest={figure.8}}
+    % Reference to some "unnamed" destinations
+    % by only specifying the page number
+    \aklsetd{name={Third bullet point page 10}, page=10}
+    \aklsetd{name={p. 2}, page=2}
+    \aklsetd{name={p. 1}, page=1}
+    \aklsetd{name={p. 7}, page=7}
+}
+
+%%% THIS SECOND PART ILLUSTRATES HOW
+%%% THE CUSTOM DESTINATIONS INTRODUCED
+%%% IN THE PREVIOUS PART CAN BE USED.
+
+
+It is possible to directly get a value, for instance using
+\aklget{romano2023modeling}{Figure 1}. This may be out of context, and you may
+prefer to cite the document along, for instance using \aklcite[Figure
+1]{romano2023modeling}. If you want to cite a page, you can too \aklcite[p.
+2]{romano2023modeling}. Let us just check that it works for section 4:
+\aklcite[Section 4]{romano2023modeling}.
+
+
+Now, we can go a bit further and cite several parts of the document as follows
+\cite[\withakl{romano2023modeling}{ see  \akl{p. 7} and \akl{Figure 8}
+}]{romano2023modeling}. To not repeat yourself, you can use \acite[\akl{Third
+bullet point page 10} and \akl{Section 4}]{romano2023modeling}.
+
+
+\bibliographystyle{plain}
+\bibliography{bibliography}
+
+\end{document}

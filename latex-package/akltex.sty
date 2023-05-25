@@ -1,0 +1,142 @@
+\NeedsTeXFormat{LaTeX2e}[1999/01/01]
+\ProvidesPackage{akltex}[2023/05/25]
+
+% Needs hyperref to be loaded 
+% so that links can be properly added
+\RequirePackage{hyperref}
+% Needs the keyval package to have nice
+% argument parsing when defining new
+% external references
+\RequirePackage{keyval}
+% Needs the xparse package to have
+% a nice interface to cite commands
+\RequirePackage{xparse}
+
+
+%
+% DECLARE PACKAGE OPTIONS
+% 
+% Only one option is allowed: whether or not
+% the package should "rewrite" links using
+% the akl scheme. This should be disabled in
+% production, and enabled for working documents.
+%
+\newif\if@aklrewrite \@aklrewritefalse
+\DeclareOption{rewrite}{\@aklrewritetrue}
+\DeclareOption*{}%% Ne rien faire quand une option est inconnue
+\ProcessOptions
+
+
+\if@aklrewrite
+    % Redefine links 
+    \makeatletter
+    % save the old hyper@linkurl command
+    \let\oldlinkurl\hyper@linkurl
+    % override it by prepending AKL in front
+    % FIXME: we should urlencode the previous uri...
+    % FIXME: we should extract potential a page and/or named destination from the uri...
+    \renewcommand{\hyper@linkurl}[2]{\oldlinkurl{#1}{akl://open-document/?uri=#2}}
+    \makeatother
+\fi
+
+%% MAIN MACROS %%
+
+% Create a new command to have an external reference
+
+% #1 citation key
+% #2 destination "name"
+% #3 full url to the destination
+\makeatletter
+\def\aklset#1#2#3{\expandafter\def\csname akl@#1@#2\endcsname{\href{#3}{#2}}}
+\makeatother
+
+% Key valued version of the command
+\ExplSyntaxOn
+\makeatletter
+\define@key{aklsetargument}{key}{\def\akl@setargument@key{#1}}
+\define@key{aklsetargument}{url}{\def\akl@setargument@url{#1}}
+\define@key{aklsetargument}{name}{\def\akl@setargument@name{#1}}
+\def\akldef#1{%
+    \setkeys{aklsetargument}{#1}%
+    \exp_args:Nooo \aklset {\akl@setargument@key} {\akl@setargument@name} {\akl@setargument@url}%
+}
+\makeatother
+\ExplSyntaxOff
+
+
+% QUOTE INSERTION COMMAND
+
+\makeatletter
+\def\aklget#1#2{\ifcsname akl@#1@#2\endcsname%
+    \csname akl@#1@#2\endcsname%
+\else%
+    \emph{#2}%
+\fi}
+\makeatother
+
+% Cite an external document to a given position
+\NewDocumentCommand{\aklcite}{ o m }{%
+    \IfNoValueTF{#1}{%
+        \cite{#2}%
+    }{%
+        \cite[{\aklget{#2}{#1}}]{#2}%
+    }%
+}
+
+\ExplSyntaxOn
+\makeatletter
+\NewDocumentCommand{\akl}{ o m }{%
+    \IfNoValueTF{#1}{%
+        \exp_args:Noo \aklget {\akl@thecite} {#2}%
+    }{%
+        \aklget{#1}{#2}%
+    }%
+}
+
+\NewDocumentCommand{\withakl}{ o m m }{%
+    \IfNoValueTF{#1}{%
+        \def\akl@thecite{#2}%
+        #3%
+    }{%
+        \def\akl@thebaseurl{#1}
+        \def\akl@thecite{#2}%
+        #3%
+    }%
+}
+\makeatother
+\ExplSyntaxOff
+
+\NewDocumentCommand{\acite}{ o m }{%
+    \IfNoValueTF{#1}{%
+        \cite{#2}%
+    }{%
+        \cite[{\withakl{#2}{#1}}]{#2}%
+    }%
+}
+
+
+% Key valued version of the command
+\ExplSyntaxOn
+\makeatletter
+
+\define@key{aklsetdarg}{dest}{\def\akl@setd@dest{#1}}
+\define@key{aklsetdarg}{page}{\def\akl@setd@page{#1}}
+\define@key{aklsetdarg}{name}{\def\akl@setd@name{#1}}
+
+\NewDocumentCommand{\aklsetd}{ m }{%
+    \setkeys{aklsetdarg}{#1}%
+    \ifcsname akl@setd@page\endcsname%
+        \ifcsname akl@setd@dest\endcsname%
+            \exp_args:Noox \aklset {\akl@thecite}{\akl@setd@name}{\akl@thebaseurl?page=\akl@setd@page&dest=\akl@setd@dest}%
+        \else%
+            \exp_args:Noox \aklset{\akl@thecite}{\akl@setd@name}{\akl@thebaseurl?page=\akl@setd@page}%
+        \fi%
+    \else%
+        please provide page or dest
+    \fi%
+    \let\akl@setd@dest\undefined%
+    \let\akl@setd@name\undefined%
+    \let\akl@setd@page\undefined%
+}
+\makeatother
+\ExplSyntaxOff
