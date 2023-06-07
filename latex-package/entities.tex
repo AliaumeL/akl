@@ -1,0 +1,334 @@
+%
+% This is a work in progress for an entity system in LaTeX,
+% designed with the help of Alexandra Rogova.
+%
+\documentclass{article}
+
+\usepackage{amsmath}
+\usepackage{amssymb}
+
+\usepackage{hyperref}
+
+\ExplSyntaxOn
+
+
+
+% entity_counter_int is the primary key
+% that auto-increments when constructing
+% new entities.
+\int_new:N   \__entity_counter_int
+\int_gset:Nn \__entity_counter_int {0}
+
+
+%
+% We represent three tables
+% 
+% 1. a table of unique identifiers (represented by the counter
+% \__entity_counter_int)
+%
+% 2. a table that represents the many to one relationship between
+% ids and names. This is represented using two kind of values.
+% A dict __entity_name_id_prop from names to id
+% and several lists __entity_id_names_$Name_tl that lists
+% the names provided to a given identifier.
+%
+% 3. a table that represents a three-valued database
+% id key value. This is represented
+% using dicts of the form __entity_id_attributes_$ID_prop
+% and reverse dicts of the form __entity_attribute_ids_$ATTR_prop
+%
+
+\prop_new:N \__entity_name_id_prop
+
+\cs_set:Npn \__entity_id_names:n #1 {
+    __entity_id_names_#1_tl
+}
+
+\cs_set:Npn \__entity_id_attributes:n #1 {
+    __entity_id_attributes_#1_prop
+}
+
+\cs_set:Npn \__entity_attribute_ids:n #1 {
+    __entity_attribute_ids_#1_prop
+}
+
+\cs_set:Npn \__entity_set_id_attribute:nnn #1#2#3 {
+    % 1/ identifier 2/ attribute name 3/ value
+    % we have to update 
+    % both the dict \__entity_attribute_ids
+    % and the dict  \__entity_id_attributes
+    \prop_put:cnn {\__entity_id_attributes:n {#1}} {#2} {#3}
+    \tl_if_exist:cTF {\__entity_attribute_ids:n {#2}} 
+        {% true code
+        }{% false code
+            \prop_new:c {\__entity_attribute_ids:n {#2}}
+        }
+    \tl_set:Nx \l_tmpa_tl {#1}
+    \prop_put:con {\__entity_attribute_ids:n {#2}} {\l_tmpa_tl} {#3}
+}
+
+\cs_set:Npn \__entity_set_name:nn #1#2 {
+    % 1/ identifier
+    % 2/ name
+    \tl_put_left:cn {\__entity_id_names:n {#1}} {{#2}}
+    \prop_put:Nnx \__entity_name_id_prop {#2} {#1}
+}
+
+% Now for accessing the values
+% low level functions
+
+\cs_set:Npn \__entity_get_id_attribute:nn #1#2 {
+    \prop_item:cn {\__entity_id_attributes:n {#1}} {#2}
+}
+
+\cs_set:Npn \__entity_get_name_id:n #1 {
+    \prop_item:Nn \__entity_name_id_prop {#1}
+}
+
+\cs_set:Npn \__entity_get_id_names:n #1 {
+    \use:c {\__entity_id_names:n {#1}}
+}
+
+\cs_set:Npn \__entity_get_attribute_ids:n #1 {
+    % attribute name
+    \use:c {\__entity_attribute_ids:n {#1}}
+}
+
+%% Modifications using the name->ID indirection 
+
+\cs_set:Npn \__entity_new_name:n #1 {
+    % #1 = name
+    % increment the counter
+    \int_gincr:N \__entity_counter_int
+    \tl_set:Nx \l_tmpa_tl {\int_use:N \__entity_counter_int}
+    % create the associated tables
+    \prop_new:c {\__entity_id_attributes:n \l_tmpa_tl}
+    \tl_new:c {\__entity_id_names:n \l_tmpa_tl}
+    % Now we can update the list
+    \__entity_set_name:nn {\l_tmpa_tl} {#1}
+}
+
+\cs_set:Npn \__entity_new_synonym:nn #1#2 {
+    % old name / new name
+    \tl_set:Nx \l_tmpa_tl {\__entity_get_name_id:n {#1}} % get the old name's id
+    \__entity_set_name:nn {\l_tmpa_tl} {#2}
+}
+
+
+\cs_set:Npn \__entity_set_name_attribute:nnn #1#2#3 {
+    % name / attribute / value
+    \__entity_set_id_attribute:nnn {\__entity_get_name_id:n {#1}} {#2} {#3}
+}
+
+\cs_set:Npn \__entity_get_name_attribute:nn #1#2 {
+    % name / attribute / value
+    \__entity_get_id_attribute:nn 
+    {\__entity_get_name_id:n {#1}} % get the old name's id
+    {#2}
+}
+
+
+%% Listing functions
+
+\cs_set:Npn \__entity_get_name_attributes_list:n #1 {
+    % name
+    \tl_set:Nx \l_tmpa_tl {\__entity_get_name_id:n {#1}} % get the old name's id
+    \tl_set:Nn \l_tmpb_tl {}
+    \prop_map_inline:cn {\__entity_id_attributes:n \l_tmpa_tl} {
+        \tl_put_left:Nn \l_tmpb_tl {{##1}}
+    }
+    \tl_use:N \l_tmpb_tl
+}
+
+\cs_set:Npn \__entity_get_attribute_ids_list:n #1 {
+    % name
+    \tl_set:Nn \l_tmpb_tl {}
+    \prop_map_inline:cn {\__entity_attribute_ids:n {#1}} {
+        \tl_put_left:Nn \l_tmpb_tl {{##1}}
+    }
+    \tl_use:N \l_tmpb_tl
+}
+
+%%% XPARSE NICE INTERFACE
+
+\NewDocumentCommand{\SynonymsOf}{ m }{
+    % TODO: list the synonyms of a given key
+}
+
+\NewDocumentCommand{\PropsOf}{ m }{
+    \__entity_get_name_attributes_list:n {#1}
+}
+
+
+\NewDocumentCommand{\IdsHavingProp}{ m }{
+    \__entity_get_attribute_ids_list:n {#1}
+}
+
+\NewDocumentCommand{\RawAssignProp}{ m m m }{
+    \__entity_set_id_attribute:nnn {#1} {#2} {#3}
+}
+
+\NewDocumentCommand{\Resolve}{ m }{
+    \__entity_get_name_id:n {#1}
+}
+
+\NewDocumentCommand{\NewName}{ o m }{
+    \IfNoValueTF{#1}{
+        \__entity_new_name:n {#2}
+    }{
+        \__entity_new_synonym:nn {#1} {#2}
+    }
+}
+
+\NewDocumentCommand{\AssignProp}{ m m m }{
+    % name 
+    % prop
+    % value
+    \__entity_set_name_attribute:nnn {#1} {#2} {#3}
+}
+
+\NewDocumentCommand{\GetProp}{ m m }{
+    % name 
+    % prop
+    \__entity_get_name_attribute:nn {#1} {#2}
+}
+
+
+%%
+% A very simple knowledge simulation
+%%
+
+\cs_new:Npn \__entity_intro_label:n #1 {
+    \tl_set:Nx \l_tmpa_tl {\__entity_get_name_attribute:nn {#1} {label}}
+    \hypertarget {\l_tmpa_tl} {
+        \exp_args:Nx \label \l_tmpa_tl
+    }
+}
+
+\cs_new:Npn \__entity_ref_label:nn #1#2 {
+    \hyperref[{\__entity_get_name_attribute:nn {#1} {label}}]{#2}
+}
+
+
+\NewDocumentCommand{\kl}{ o m }{%
+    \IfNoValueTF{#1}{%
+        \__entity_ref_label:nn {#2} {#2}
+    }{
+        \__entity_ref_label:nn {#1} {#2}
+    }
+}
+
+\NewDocumentCommand{\intro}{ o m }{%
+    \IfNoValueTF{#1}{
+        \__entity_intro_label:n {#2} #2
+    }{
+        \__entity_intro_label:n {#1} #2
+    }
+}
+
+\ExplSyntaxOff
+
+%%% 
+% A SMALL BUT MEANINGFUL DEMO
+%
+%
+% --> we want to be able to talk about several names
+% --> we maybe want to be able to talk about free variables
+% -----> this is complicated, but we can have a convention
+% -----> that states that "x"
+%
+%%%
+
+\begin{document}
+
+\NewName{\mathcal{R}}
+\NewName{test}
+\NewName{Thomas Colcombet}
+\NewName[Thomas Colcombet]{Thomas C.}
+\NewName[Thomas Colcombet]{Colcombet, Thomas}
+\NewName[Thomas C.]{Colcombet}
+
+
+
+\AssignProp{test}{salut}{valeur}
+\AssignProp{\mathcal{R}}{salut}{$x+1$}
+\AssignProp{Colcombet}{salut}{$x+1$}
+\AssignProp{Colcombet}{url}{rauitenrt&&\\nrsutens}
+
+
+%\ExplSyntaxOn
+%\prop_show:N \__entity_name_id_prop
+%\tl_show:c {\__entity_id_names:n 1}
+%\tl_show:c {\__entity_id_names:n 2}
+%\tl_show:c {\__entity_id_names:n 3}
+
+%\prop_show:c {\__entity_id_attributes:n 1}
+%\prop_show:c {\__entity_id_attributes:n 2}
+%\prop_show:c {\__entity_id_attributes:n 3}
+%\ExplSyntaxOff
+
+
+\GetProp{test}{salut}
+
+\GetProp{\mathcal{R}}{salut}
+
+\GetProp{Colcombet}{salut}
+
+\PropsOf{Colcombet}
+
+\IdsHavingProp{salut}
+
+\section{Knowledge for free}
+
+Do you want some labels and knowledges?
+
+\NewName{my notion}
+\AssignProp{my notion}{label}{my-notion}
+\NewName[my notion]{shorter@name}
+
+\NewDocumentCommand{\klscope}{ m m m }{
+    \kl[#1@#2]{#3}
+}
+\NewDocumentCommand{\introscope}{ m m m }{
+    \kl[#1@#2]{#3}
+}
+
+
+We can use \intro[my notion]{an introduction of the notion},
+and then follow the introduction by
+\kl[my notion]{some links to the notion}.
+We can fake scopes
+in a very simple manner
+using \klscope{shorter}{name}{some ref}.
+
+
+\section{Free variables ... for free!}
+
+\NewName{nombre entier}
+\NewDocumentCommand{\AInt}{ O{n} }{ #1 }
+\AssignProp{nombre entier}{math}{\mathbb{N}}
+\AssignProp{nombre entier}{freevar}{\AInt}
+\NewName[nombre entier]{int}
+
+\NewDocumentCommand{\Introduce}{ o m }{
+    \IfNoValueTF{#1}{
+        \GetProp{#2}{freevar} \in \GetProp{#2}{math}
+    }{
+        \GetProp{#2}{freevar}[#1] \in \GetProp{#2}{math}
+    }
+}
+
+Let us introduce $\Introduce[m]{nombre entier}$ and
+$\Introduce[n]{int}$ two integers.
+
+
+%\ExplSyntaxOn
+%\prop_show:c {\__entity_attribute_ids:n {salut}}
+%\prop_show:c {\__entity_attribute_ids:n {url}}
+%\ExplSyntaxOff
+
+
+
+
+
+\end{document}
