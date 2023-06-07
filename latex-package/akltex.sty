@@ -27,15 +27,22 @@
 \ProcessOptions
 
 
+
 \if@aklrewrite
     % Redefine links 
     \makeatletter
     % save the old hyper@linkurl command
     \let\oldlinkurl\hyper@linkurl
     % override it by prepending AKL in front
-    % FIXME: we should urlencode the previous uri...
-    % FIXME: we should extract potential a page and/or named destination from the uri...
-    \renewcommand{\hyper@linkurl}[2]{\oldlinkurl{#1}{akl://open-document/?uri=#2}}
+    \ExplSyntaxOn
+    \cs_new:Npn \__akltex_hyper_linkurl:nn #1#2 {
+        \str_set:Nx \l_tmpb_str {#2}
+        \exp_args:NNx \str_set_convert:Nnnn {\l_tmpa_str} {\l_tmpb_str} { } {utf8/url}
+        \str_put_left:Nn \l_tmpa_str {akl://open-document/?uri=}
+        \exp_args:Nox \oldlinkurl {#1} {\str_use:N \l_tmpa_str}
+    }
+    \renewcommand{\hyper@linkurl}[2]{\__akltex_hyper_linkurl:nn {#1} {#2}}
+    \ExplSyntaxOff
     \makeatother
 \fi
 
