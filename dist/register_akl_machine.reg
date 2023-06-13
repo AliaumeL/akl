@@ -1,0 +1,9 @@
+Windows Registry Editor Version 5.00
+
+[HKEY_CLASSES_ROOT\akl]
+@="AKL PDF Library"
+"URL Protocol"=""
+[HKEY_CLASSES_ROOT\akl\shell]
+[HKEY_CLASSES_ROOT\akl\shell\open]
+[HKEY_CLASSES_ROOT\akl\shell\open\command] 
+@="\"C:\\Program Files (x86)\\AKL\\akl.exe\" \"%1\""

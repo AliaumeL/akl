@@ -111,7 +111,19 @@ TODO
 
 ### On Windows
 
-TODO
+Copy the binary `akl-rs.exe` into a safe location,
+for instance `C:\Program Files (x86)\AKL\akl.exe`.
+
+Optionally, if you want to be able to access it directly from the command line,
+you can add this directory to your PATH:
+- WIN+R
+- Enter `SystemPropertiesAdvanced.exe`
+- Environment variables -> Path (current user or system) -> Edit -> New
+- Enter `C:\Program Files (x86)\AKL\`
+
+Then, register the custom URI scheme by running `dist/register_akl_machine.reg` (registration for all users)
+or `dist/register_akl_user.reg` (registration for the current user only). If your binary is not in `C:\Program Files (x86)\AKL\akl.exe`,
+you have to edit the `.reg` file accordingly.
 
 ## How To install the AKL Extension
 
