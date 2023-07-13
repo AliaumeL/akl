@@ -83,7 +83,7 @@ struct ImportArgs {
     year: Option<u32>,
 
     /// View after import?
-    #[arg(short, long, default_value="true")]
+    #[arg(short, long, default_value="false")]
     view: bool,
 
     /// Force re-import even if the pdf is in the library?
