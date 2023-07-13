@@ -5,6 +5,7 @@
 \documentclass{article}
 
 \usepackage{amsmath}
+\usepackage{xcolor}
 \usepackage{amssymb}
 
 \usepackage{hyperref}
@@ -18,7 +19,6 @@
 % new entities.
 \int_new:N   \__entity_counter_int
 \int_gset:Nn \__entity_counter_int {0}
-
 
 %
 % We represent three tables
@@ -187,10 +187,15 @@
     \__entity_set_name_attribute:nnn {#1} {#2} {#3}
 }
 
-\NewDocumentCommand{\GetProp}{ m m }{
+\NewExpandableDocumentCommand{\GetProp}{ m m }{
     % name 
     % prop
     \__entity_get_name_attribute:nn {#1} {#2}
+}
+
+\NewExpandableDocumentCommand{\GetPropEval}{ m m }{
+    \exp_args:Nxx
+        \__entity_get_name_attribute:nn {#1} {#2}
 }
 
 
@@ -210,7 +215,7 @@
 }
 
 
-\NewDocumentCommand{\kl}{ o m }{%
+\NewExpandableDocumentCommand{\kl}{ o m }{%
     \IfNoValueTF{#1}{%
         \__entity_ref_label:nn {#2} {#2}
     }{
@@ -218,7 +223,7 @@
     }
 }
 
-\NewDocumentCommand{\intro}{ o m }{%
+\NewExpandableDocumentCommand{\intro}{ o m }{%
     \IfNoValueTF{#1}{
         \__entity_intro_label:n {#2} #2
     }{
@@ -243,15 +248,18 @@
 
 \NewName{\mathcal{R}}
 \NewName{test}
+
+\AssignProp{test}{salut}{valeur}
+\AssignProp{\mathcal{R}}{salut}{$x+1$}
+
+
+
+
 \NewName{Thomas Colcombet}
 \NewName[Thomas Colcombet]{Thomas C.}
 \NewName[Thomas Colcombet]{Colcombet, Thomas}
 \NewName[Thomas C.]{Colcombet}
 
-
-
-\AssignProp{test}{salut}{valeur}
-\AssignProp{\mathcal{R}}{salut}{$x+1$}
 \AssignProp{Colcombet}{salut}{$x+1$}
 \AssignProp{Colcombet}{url}{rauitenrt&&\\nrsutens}
 
@@ -266,7 +274,6 @@
 %\prop_show:c {\__entity_id_attributes:n 2}
 %\prop_show:c {\__entity_id_attributes:n 3}
 %\ExplSyntaxOff
-
 
 \GetProp{test}{salut}
 
@@ -301,14 +308,75 @@ We can fake scopes
 in a very simple manner
 using \klscope{shorter}{name}{some ref}.
 
+However, this is a poor man's `knowledge'.
+Let us add another level of indirection
+to understand what is going on.
+
+\NewName{semigroup}
+\AssignProp{semigroup}{scope}{true}
+
+\NewName{semigroup morphism}
+\AssignProp{semigroup}{morphism}{semigroup morphism}
+\AssignProp{semigroup morphism}{colour}{red}
+\AssignProp{semigroup morphism}{math}{\mu}
+
+
+\NewExpandableDocumentCommand{\Scoped}{ m m }{%
+    \GetProp{#1}{#2}%
+}
+
+Let us see what it is all about:
+\Scoped{semigroup}{morphism}.
+Now it is easy to compose
+such things and
+for instance build
+nice formulas such as
+$\GetProp{semigroup morphism}{math}$
+should have colour
+\textcolor{\GetProp{semigroup morphism}{colour}}{test}.
+Note that together with a proper scoping mechanism
+this can be quite powerful.
+
+
+\GetPropEval{\Scoped{semigroup}{morphism}}{colour}
+
+%
+% semigroup:morphism:colour
+% semigroup:math:cmd
+% semigroup:nanania:coucou
+%
+%
+% \GetNested{semigroup:morphism}{colour}
+% \GetNested{semigroup:math}{cmd}
+% etc ...
+% 
+% TODO: add imports of namespaces.
+%
+% \use{semigroup:morphism}
+% -> put all the keys of semigroup:morphism
+% -> at the toplevel.
+% -> \GetProp{nanania}{test}
+%  -> \GetProp{semigroup:morphism:nanania}{test}
+%  -> or \GetProp{nanania:test}
+% \use[sm]{semigroup}
+% ->
+
 
 \section{Free variables ... for free!}
 
+
 \NewName{nombre entier}
+\NewName[nombre entier]{int}
 \NewDocumentCommand{\AInt}{ O{n} }{ #1 }
 \AssignProp{nombre entier}{math}{\mathbb{N}}
 \AssignProp{nombre entier}{freevar}{\AInt}
-\NewName[nombre entier]{int}
+
+\NewName{nombre réel}
+\NewName[nombre réel]{real}
+\NewDocumentCommand{\AReal}{ O{x} }{ #1 }
+\AssignProp{real}{math}{\mathbb{R}}
+\AssignProp{real}{freevar}{\AReal}
+
 
 \NewDocumentCommand{\Introduce}{ o m }{
     \IfNoValueTF{#1}{
@@ -318,8 +386,23 @@ using \klscope{shorter}{name}{some ref}.
     }
 }
 
-Let us introduce $\Introduce[m]{nombre entier}$ and
-$\Introduce[n]{int}$ two integers.
+
+Let us introduce $\Introduce[m]{nombre entier}$ and $\Introduce[n]{int}$ two
+integers. But also $\Introduce[r]{real}$.
+
+\NewDocumentCommand{\Define}{ m m m }{
+    {\expandafter\gdef\csname #1\endcsname{#2}}
+    \Introduce[#2]{#3}
+}
+
+Sometimes, it is good to turn an
+otherwise ``free'' variable into something that is bound and can be referred to
+outside of the current scope.
+For that, we can build
+a function $\Define{r}{r}{real}$
+that maps to a macro,
+and then reuse this $\r$.
+
 
 
 %\ExplSyntaxOn

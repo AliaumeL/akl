@@ -3,6 +3,8 @@
 \usepackage{hyperref}
 \usepackage{url}
 
+\usepackage{namespc}
+
 
 % Loading the package with the "rewrite" mode
 % updates all the links to be handled by `akl`
@@ -15,12 +17,32 @@
 
 \maketitle
 
+%% TODO: this is problematic
+%% because it does not allows
+%% to have multiple names for
+%% the same entity.
+%
+% -> could we have an `entity` latex package?
+%
+% \NewEntity{name,same as={other entity}}
+%
+% \GetEntity{name} -> returns a unique identifier
+% \SameEntities{name,name} -> boolean
+% 
+\akldef{
+    key=douéneautabot2022pebble,
+    name=Super def,
+    url={arxiv:2104.14019?page=11&dest=theorem.5.37}
+}
+
+
 %%% THE FIRST PART OF THE DOCUMENT
 %%% ILLUSTRATES THE SYNTAX FOR DEFINING
 %%% CUSTOM ENTRYPOINTS OF DOCUMENTS
 
 % Adding a figure as part of a paper
 \aklset{romano2023modeling}{Figure 1}{https://arxiv.org/abs/2305.15355?page=5&dest=figure.1}
+
 
 % Referencing a section, using the key-value syntax
 \akldef{
@@ -62,6 +84,11 @@ Now, we can go a bit further and cite several parts of the document as follows
 \cite[\withakl{romano2023modeling}{ see  \akl{p. 7} and \akl{Figure 8}
 }]{romano2023modeling}. To not repeat yourself, you can use \acite[\akl{Third
 bullet point page 10} and \akl{Section 4}]{romano2023modeling}.
+
+\clearpage
+
+\aklcite[Super def]{douéneautabot2022pebble}
+
 
 
 \bibliographystyle{plain}
