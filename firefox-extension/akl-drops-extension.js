@@ -20,8 +20,8 @@ setTimeout(() => {
 
   const identifiers = [
     `https://dx.doi.org/${DOI}`,
-    `doi:${DOI}`,
     window.location.href,
+    `doi:${DOI}`,
   ];
   const context = [];
   if (publisher) {

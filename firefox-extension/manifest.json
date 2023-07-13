@@ -12,8 +12,15 @@
       "storage",
       "webRequestBlocking",
       "webNavigation",
+      "nativeMessaging",
       "<all_urls>"
   ],
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "akl@aliau.me",
+      "strict_min_version": "50.0"
+    }
+  },
   "background": {
     "scripts": ["background.js"]
   },
